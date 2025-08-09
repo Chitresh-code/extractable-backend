@@ -1,0 +1,99 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "6379:6379"
+
+  web:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: extractable.settings
+      # SKIP_COLLECTSTATIC: "1"           # Command to skip collectstatic during build
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app              
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    command: ["celery", "-A", "extractable", "worker", "-l", "info"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    command: ["celery", "-A", "extractable", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  flower:
+    image: mher/flower:2.0
+    env_file:
+      - .env
+    environment:
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      FLOWER_PORT: 5555
+    depends_on:
+      - redis
+    ports:
+      - "5555:5555"
+    restart: unless-stopped
+
+  # ngrok exposes http://web:8000 to the internet at your reserved subdomain
+  ngrok:
+    image: ngrok/ngrok:latest
+    depends_on:
+      web:
+        condition: service_started
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    command:
+      - "http"
+      - "--domain=${NGROK_DOMAIN}"
+      - "web:8000"
+    ports:
+      - "4040:4040"
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  static_volume:
+  media_volume:
