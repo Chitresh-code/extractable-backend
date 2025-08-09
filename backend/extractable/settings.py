@@ -48,10 +48,16 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'rest_framework.authtoken',
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     'djoser',
 
     # Custom apps
     'users',
+    'documents',
+    'extraction',
+    'tables',
+    'utils',
 ]
 
 MIDDLEWARE = [
@@ -130,7 +136,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files (user-uploaded content)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -140,12 +151,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    )
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SIMPLE_JWT = {
@@ -239,3 +251,60 @@ LOGGING = {
         },
     },
 }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "ExtracTable Backend API",
+    "DESCRIPTION": "OpenAPI schema for the ExtracTable backend.",
+    "VERSION": "1.0.0",
+    "SERVERS": [
+        {"url": config("API_BASE_URL", default="http://localhost:8000"), "description": "Current"}
+    ],
+    "CONTACT": {"name": "API Team", "email": config("EMAIL_HOST_USER")},
+    "LICENSE": {"name": "Proprietary"},
+    "SECURITY": [{"BearerAuth": []}],
+    "SECURITY_SCHEMES": {
+        "BearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
+    },
+    # Split request/response components for cleaner docs
+    "COMPONENT_SPLIT_REQUEST": True,
+    "COMPONENT_SPLIT_PATCH": True,
+    # Use sidecar for static assets so you don’t have to vend them yourself
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
+    "SWAGGER_UI_SETTINGS": {"persistAuthorization": True},
+    "SCHEMA_PATH_PREFIX": r"/(api/[^/]+/v1|auth)",
+}
+
+from decouple import config
+
+# --- Redis cache (already useful for throttling/ratelimit) ---
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": config("REDIS_URL", default="redis://redis:6379/1"),
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "TIMEOUT": 60 * 60,
+    }
+}
+
+# --- Celery (Redis broker + results) ---
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
+
+# Serialization / timezone
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE  # you already set TIME_ZONE
+
+# Visibility timeout for long tasks (seconds)
+# CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 3600}
+
+# Example beat schedule
+# from celery.schedules import crontab
+# CELERY_BEAT_SCHEDULE = {
+#     "ping-every-minute": {
+#         "task": "users.tasks.ping",
+#         "schedule": crontab(minute="*/1"),
+#     },
+# }

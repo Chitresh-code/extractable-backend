@@ -16,9 +16,33 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    path("admin/", admin.site.urls),
+
+    # --- OpenAPI schema & docs ---
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),                   # JSON by default
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+
+    # --- Auth (Djoser + JWT) ---
+    path("auth/", include("djoser.urls")),
+    path("auth/", include("djoser.urls.jwt")),
+
+    # --- Your app routes (uncomment/add as they exist) ---
+    # path("api/users/v1/", include("users.urls")),
+    # path("api/documents/v1/", include("documents.urls")),
+    # path("api/extraction/v1/", include("extraction.urls")),
+    # path("api/tables/v1/", include("tables.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL,  document_root=settings.MEDIA_ROOT)
