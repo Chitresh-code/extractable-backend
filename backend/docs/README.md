@@ -109,7 +109,11 @@ http://localhost:8000/api/docs/                 # Swagger UI
 http://localhost:8000/api/schema/redoc/         # Redoc UI
 ```
 
-You can also find the complete OpenAPI specification in the [`openapi.yaml`](./openapi.yaml) file at the root of the project.
+**Download OpenAPI Schema:**
+
+* 📥 [Download OpenAPI Schema](http://localhost:8000/api/schema/) - Raw OpenAPI 3.0 specification file
+
+You can also find the complete OpenAPI specification in the [`openapi.yaml`](https://github.com/Chitresh-code/extractable-backend/blob/main/openapi.yaml) file at the root of the project.
 
 ## 🗄 Running Background Workers
 
@@ -122,4 +126,4 @@ docker-compose up beat
 
 ## 🛡 License
 
-This project is licensed under the terms of the [MIT License](LICENSE).
+This project is licensed under the terms of the [MIT License](https://github.com/Chitresh-code/extractable-backend/blob/main/LICENSE).

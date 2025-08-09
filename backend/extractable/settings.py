@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     "drf_spectacular",
     "drf_spectacular_sidecar",
+    'django_celery_beat',
+    'django_celery_results',
     'djoser',
 
     # Custom apps
@@ -168,7 +170,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_TRUSTED_ORIGINS = config('CORS_TRUSTED_ORIGINS', default='', cast=Csv())
+
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
 
 CORS_ALLOW_METHODS = [
     'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'
@@ -178,6 +184,12 @@ CORS_ALLOW_HEADERS = [
     'authorization', 'content-type', 'x-csrftoken', 'accept',
     'user-agent', 'x-requested-with',
 ]
+
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    cast=Csv(),
+    default="https://localhost,https://127.0.0.1"
+)
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
@@ -272,7 +284,7 @@ SPECTACULAR_SETTINGS = {
     "SWAGGER_UI_DIST": "SIDECAR",
     "REDOC_DIST": "SIDECAR",
     "SWAGGER_UI_SETTINGS": {"persistAuthorization": True},
-    "SCHEMA_PATH_PREFIX": r"/(api/[^/]+/v1|auth)",
+    "SCHEMA_PATH_PREFIX": r"/($|api/[^/]+/v1|auth)"
 }
 
 from decouple import config
@@ -290,12 +302,18 @@ CACHES = {
 # --- Celery (Redis broker + results) ---
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
+CELERY_CACHE_BACKEND = "default"          
+CELERY_TASK_TRACK_STARTED = True          
+CELERY_RESULT_EXTENDED = True             
+CELERY_RESULT_EXPIRES = 60 * 60 * 24 * 7
 
 # Serialization / timezone
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE  # you already set TIME_ZONE
+
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # Visibility timeout for long tasks (seconds)
 # CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 3600}

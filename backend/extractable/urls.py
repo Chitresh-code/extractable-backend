@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from extractable.views import home
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -25,6 +26,7 @@ from drf_spectacular.views import (
 )
 
 urlpatterns = [
+    path("", home, name="home"),
     path("admin/", admin.site.urls),
 
     # --- OpenAPI schema & docs ---

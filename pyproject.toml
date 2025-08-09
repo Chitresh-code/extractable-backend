@@ -5,15 +5,22 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "celery>=5.5.3",
     "dj-database-url>=3.0.1",
     "django>=5.2.5",
+    "django-celery-beat>=2.8.1",
+    "django-celery-results>=2.6.0",
     "django-cors-headers>=4.7.0",
+    "django-redis>=6.0.0",
     "djangorestframework>=3.16.0",
     "djangorestframework-simplejwt>=5.5.1",
     "djoser>=2.3.3",
     "drf-spectacular>=0.28.0",
     "drf-spectacular-sidecar>=2025.8.1",
+    "flower>=2.0.1",
     "gunicorn>=23.0.0",
+    "markdown>=3.8.2",
     "psycopg2-binary>=2.9.10",
     "python-decouple>=3.8",
+    "redis>=6.4.0",
 ]
